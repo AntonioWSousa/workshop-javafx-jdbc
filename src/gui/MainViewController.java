@@ -3,6 +3,7 @@ package gui;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 import application.Main;
 import gui.util.Alerts;
@@ -29,18 +30,21 @@ public class MainViewController implements Initializable {
 	private MenuItem menuItemAbout;
 	
 	@FXML
-	public void onMenuItemSellerAction() { //métodos para tratarem os eventos do menu
+	public void onMenuItemSellerAction() {
 		System.out.println("onMenuItemSellerAction");
 	}
 	
 	@FXML
-	public void onMenuItemDepartmentAction() { 
-		loadView2("/gui/DepartmentList.fxml");
+	public void onMenuItemDepartmentAction() { /*no momento da chamada, incluir um segundo parâmetro, pois o loadviw2 feito anteriormente não existe mais*/
+		loadView("/gui/DepartmentList.fxml", (DepartmentListController controller) -> { /*criada uma função de inicialização através de uma expressão lambda*/
+			controller.setDepertmentService(new DepartmentService()); /*esta é a ação de inicialização do DepartmentListController*/
+			controller.updateTableView();
+		} ); 
 	}
 	
 	@FXML
 	public void onMenuItemAboutAction() { 
-		loadView("/gui/About.fxml");
+		loadView("/gui/About.fxml", x -> {}); /*foi criada uma ação para carregar o About, mas num primeiro, não carrega nada*/
 	}
 	
 	@Override
@@ -48,7 +52,7 @@ public class MainViewController implements Initializable {
 		
 	}
 	
-	private synchronized void loadView(String absoluteName) { 
+	private synchronized <T> void loadView(String absoluteName, Consumer<T> initializingAction) { /*ao realizar este comando, a função loadview se tornou uma função genérica, uma função do tipo T, uma função parametrizada com um tipo qualquer*/
 		try { 
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
 			VBox newVBox = loader.load();
@@ -61,6 +65,8 @@ public class MainViewController implements Initializable {
 			mainVBox.getChildren().add(mainMenu);
 			mainVBox.getChildren().addAll(newVBox.getChildren());
 			
+			T controller = loader.getController(); /*a função getController() está retornando o controlador do tipo que está chamando o DepartmentListController*/
+			initializingAction.accept(controller); /*comando para executar a ação do Consumer*/
 		}
 		catch (IOException e){
 			Alerts.showAlert("IO Exception", "Erro ao carregar a página...", e.getMessage(), AlertType.ERROR);
@@ -69,28 +75,5 @@ public class MainViewController implements Initializable {
 	}
 	
 	
-	private synchronized void loadView2(String absoluteName) { 
-		try { 
-			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
-			VBox newVBox = loader.load();
-			
-			Scene mainScene = Main.getMainScene();
-			VBox mainVBox = (VBox) ((ScrollPane) mainScene.getRoot()).getContent();
-			
-			Node mainMenu = mainVBox.getChildren().get(0);
-			mainVBox.getChildren().clear();
-			mainVBox.getChildren().add(mainMenu);
-			mainVBox.getChildren().addAll(newVBox.getChildren());
-			
-			DepartmentListController controller = loader.getController();
-			controller.setDepertmentService(new DepartmentService());
-			controller.updateTableView();
-			
-		}
-		catch (IOException e){
-			Alerts.showAlert("IO Exception", "Erro ao carregar a página...", e.getMessage(), AlertType.ERROR);
-		}
-
-	}
 
 }
