@@ -35,16 +35,16 @@ public class MainViewController implements Initializable {
 	}
 	
 	@FXML
-	public void onMenuItemDepartmentAction() { /*no momento da chamada, incluir um segundo parâmetro, pois o loadviw2 feito anteriormente não existe mais*/
-		loadView("/gui/DepartmentList.fxml", (DepartmentListController controller) -> { /*criada uma função de inicialização através de uma expressão lambda*/
-			controller.setDepertmentService(new DepartmentService()); /*esta é a ação de inicialização do DepartmentListController*/
+	public void onMenuItemDepartmentAction() { 
+		loadView("/gui/DepartmentList.fxml", (DepartmentListController controller) -> { 
+			controller.setDepertmentService(new DepartmentService()); 
 			controller.updateTableView();
 		} ); 
 	}
 	
 	@FXML
 	public void onMenuItemAboutAction() { 
-		loadView("/gui/About.fxml", x -> {}); /*foi criada uma ação para carregar o About, mas num primeiro, não carrega nada*/
+		loadView("/gui/About.fxml", x -> {}); 
 	}
 	
 	@Override
@@ -52,7 +52,7 @@ public class MainViewController implements Initializable {
 		
 	}
 	
-	private synchronized <T> void loadView(String absoluteName, Consumer<T> initializingAction) { /*ao realizar este comando, a função loadview se tornou uma função genérica, uma função do tipo T, uma função parametrizada com um tipo qualquer*/
+	private synchronized <T> void loadView(String absoluteName, Consumer<T> initializingAction) { 
 		try { 
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
 			VBox newVBox = loader.load();
@@ -65,8 +65,8 @@ public class MainViewController implements Initializable {
 			mainVBox.getChildren().add(mainMenu);
 			mainVBox.getChildren().addAll(newVBox.getChildren());
 			
-			T controller = loader.getController(); /*a função getController() está retornando o controlador do tipo que está chamando o DepartmentListController*/
-			initializingAction.accept(controller); /*comando para executar a ação do Consumer*/
+			T controller = loader.getController();
+			initializingAction.accept(controller); 
 		}
 		catch (IOException e){
 			Alerts.showAlert("IO Exception", "Erro ao carregar a página...", e.getMessage(), AlertType.ERROR);
