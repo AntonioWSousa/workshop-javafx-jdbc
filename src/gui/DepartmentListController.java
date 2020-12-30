@@ -45,9 +45,10 @@ public class DepartmentListController implements Initializable {
 	private ObservableList<Department> obsList;
 	
 	@FXML
-	public void onBtNewAction(ActionEvent event) { /*referência para o controle que recebeu o evento*/
-		Stage parentStage = Utils.currenStage(event); /*essa linha passa uma referência para o Stage atual e passa para o parentstage na linha abaixo para criar a janela de formulário */
-		createDialogForm("/gui/DepartmentForm.fxml", parentStage);
+	public void onBtNewAction(ActionEvent event) { 
+		Stage parentStage = Utils.currenStage(event);
+		Department obj = new Department();
+		createDialogForm(obj, "/gui/DepartmentForm.fxml", parentStage);
 	}
 	
 	public void setDepertmentService(DepartmentService service) {
@@ -77,12 +78,15 @@ public class DepartmentListController implements Initializable {
 		tableViewDepartment.setItems(obsList);
 	}
 	
-	private void createDialogForm(String absoluteName, Stage parentStage) { /*toda vez que cria uma janela de diálogo, é obrigatório informar quem é o Stage que criou a janela de diálogo*/
+	private void createDialogForm(Department obj, String absoluteName, Stage parentStage) { 
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
 			Pane pane = loader.load();
 			
-			/*função para preencher o formulário do departamento*/
+			DepartmentFormController controller = loader.getController();
+			controller.setDepartment(obj);
+			controller.updateFormData(); /*função que vai servir para carregar o obj (dados do departamento) no formulário*/
+	
 			Stage dialogStage = new Stage();
 			dialogStage.setTitle("Enter Department data");
 			dialogStage.setScene(new Scene(pane));
