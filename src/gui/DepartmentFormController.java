@@ -3,7 +3,9 @@ package gui;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import db.DbException;
 import gui.listeners.DataChangeListener;
@@ -18,6 +20,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import model.entities.Department;
+import model.exceptions.ValidationException;
 import model.services.DepartmentService;
 
 public class DepartmentFormController implements Initializable {
@@ -26,7 +29,7 @@ public class DepartmentFormController implements Initializable {
 	
 	private DepartmentService service;
 	
-	private List<DataChangeListener> dataChangeListeners = new ArrayList<>(); //comando que permite outros objetos se inscreverem na lista e mudar o evento
+	private List<DataChangeListener> dataChangeListeners = new ArrayList<>();
 
 	@FXML
 	private TextField txtId;
@@ -52,7 +55,7 @@ public class DepartmentFormController implements Initializable {
 	}
 	
 	public void subscribeDataChangeListener (DataChangeListener listener) {
-		dataChangeListeners.add(listener); //método que permite inscrever outros listeners na lista
+		dataChangeListeners.add(listener);
 	}
 	
 	@FXML
@@ -69,13 +72,16 @@ public class DepartmentFormController implements Initializable {
 			notifyDataChangeListeners();
 			Utils.currenStage(event).close();
 		}
+		catch (ValidationException ve) {
+			setErrorMessages(ve.getErrors());
+		}
 		catch (DbException dbe) {
 			Alerts.showAlert("Error saving object", null, dbe.getMessage(), AlertType.ERROR);
 		}
 	}
 	
-	private void notifyDataChangeListeners() { //método que vai emitir o evento onDataChanged para outras listas
-		for (DataChangeListener listener : dataChangeListeners) { //para cada DataChangeListener listener pertencente (:) à lista (dataChangeListeners), é preciso fazer um listener chamando o evento onDataChanged
+	private void notifyDataChangeListeners() {
+		for (DataChangeListener listener : dataChangeListeners) { 
 			listener.onDataChanged();
 		}
 		
@@ -84,8 +90,18 @@ public class DepartmentFormController implements Initializable {
 	private Department getFormData() {
 		Department obj = new Department();
 		
+		ValidationException exception = new ValidationException("Validation error"); //instanciando a exceção
+		
 		obj.setId(Utils.tryParseToInt(txtId.getText()));
+		
+		if (txtName.getText() == null || txtName.getText().trim().equals("")) {//foi criado um if para não deixar o nome como vazio, e adicionar um possível erro se houver campo vazio
+			exception.addError("name", "Fields can't be empty! Enter a department name.");
+		}
 		obj.setName(txtName.getText());
+		
+		if (exception.getErrors().size() > 0) {//testando um possível erro; neste caso, o teste é para ver se, na coleção de erros (getErrors), tem pelo menos um erro (size() > 0); se a verificação for verdade, uma exceção é lançada
+			throw exception;
+		}
 		
 		return obj;
 	}
@@ -113,6 +129,14 @@ public class DepartmentFormController implements Initializable {
 		}
 		txtId.setText(String.valueOf(entity.getId()));
 		txtName.setText(entity.getName());
+	}
+	
+	private void setErrorMessages(Map<String, String> errors) {
+		Set<String> fields = errors.keySet();
+		
+		if(fields.contains("name")) { //comando para testar se a mensagem de erro vai aparecer ao inserir uma informação errada no campo
+			labelErrorName.setText(errors.get("name"));
+		}
 	}
 
 }
