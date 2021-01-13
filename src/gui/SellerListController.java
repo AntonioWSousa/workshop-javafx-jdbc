@@ -31,6 +31,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.entities.Seller;
+import model.services.DepartmentService;
 import model.services.SellerService;
 
 public class SellerListController implements Initializable, DataChangeListener {
@@ -88,9 +89,9 @@ public class SellerListController implements Initializable, DataChangeListener {
 		tableColumnName.setCellValueFactory(new PropertyValueFactory<>("name"));
 		tableColumnEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
 		tableColumnBirthDate.setCellValueFactory(new PropertyValueFactory<>("birthDate"));
-		Utils.formatTableColumnDate(tableColumnBirthDate, "dd/MM/yyyy"); //método para que a data apareça formatada
+		Utils.formatTableColumnDate(tableColumnBirthDate, "dd/MM/yyyy");
 		tableColumnBaseSalary.setCellValueFactory(new PropertyValueFactory<>("baseSalary"));
-		Utils.formatTableColumnDouble(tableColumnBaseSalary, 2);//método para formatar o némero com 2 casas decimais
+		Utils.formatTableColumnDouble(tableColumnBaseSalary, 2);
 		
 		Stage stage = (Stage) Main.getMainScene().getWindow();
 		tableViewSeller.prefHeightProperty().bind(stage.heightProperty()); 
@@ -114,8 +115,9 @@ public class SellerListController implements Initializable, DataChangeListener {
 			
 			SellerFormController controller = loader.getController();
 			controller.setSeller(obj);
-			controller.setSellerService(new SellerService());
-			controller.subscribeDataChangeListener(this); //comando que se inscreve para realizar o evento, e quando o evento é disparado, na verdade, vai ser executado o método updateTableView
+			controller.setServices(new SellerService(), new DepartmentService());
+			controller.loadAssociatedObjects();
+			controller.subscribeDataChangeListener(this);
 			controller.updateFormData();
 	
 			Stage dialogStage = new Stage();
@@ -128,6 +130,7 @@ public class SellerListController implements Initializable, DataChangeListener {
 			
 		}
 		catch (IOException e){
+			e.printStackTrace();//para imprimir no console as mensagem de erro que podem acontecer
 			Alerts.showAlert("IO Exception", "Error loading view", e.getMessage() , AlertType.ERROR);
 		}
 	}
@@ -157,7 +160,7 @@ public class SellerListController implements Initializable, DataChangeListener {
 		});
 	}
 	
-	private void initRemoveButtons() { //método para remover um departamento do banco de dados
+	private void initRemoveButtons() {
 		tableColumnREMOVE.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
 		tableColumnREMOVE.setCellFactory(param -> new TableCell<Seller, Seller>() {
 			private final Button button = new Button("remove");
@@ -178,7 +181,7 @@ public class SellerListController implements Initializable, DataChangeListener {
 	private void removeEntity(Seller obj) {
 		Optional<ButtonType> result = Alerts.showConfirmation("Confirmation", "Are you sure to delete?");
 		
-		if (result.get() == ButtonType.OK) {//get() é chamado porque o Optionn é um objeto que carrega outro objeto dentro dele, podendo ele eestar presente ou não; então, para acessar o objeto dentro do Optional, é chamado o gee()
+		if (result.get() == ButtonType.OK) {//get() é chamado porque o Option é um objeto que carrega outro objeto dentro dele, podendo ele eestar presente ou não; então, para acessar o objeto dentro do Optional, é chamado o get()
 			if (service == null) {
 				throw new IllegalStateException("Service was null");
 			}

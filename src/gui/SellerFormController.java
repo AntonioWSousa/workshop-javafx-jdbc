@@ -15,16 +15,24 @@ import gui.listeners.DataChangeListener;
 import gui.util.Alerts;
 import gui.util.Constraints;
 import gui.util.Utils;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.util.Callback;
+import model.entities.Department;
 import model.entities.Seller;
 import model.exceptions.ValidationException;
+import model.services.DepartmentService;
 import model.services.SellerService;
 
 public class SellerFormController implements Initializable {
@@ -32,6 +40,8 @@ public class SellerFormController implements Initializable {
 	private Seller entity;
 	
 	private SellerService service;
+	
+	private DepartmentService departmentService; //dependência do controller para o DeparmentService porque vai ter que buscar do banco de dados os departamentos para preencher a lista
 	
 	private List<DataChangeListener> dataChangeListeners = new ArrayList<>();
 
@@ -49,6 +59,9 @@ public class SellerFormController implements Initializable {
 
 	@FXML
 	private TextField txtBaseSalary;
+	
+	@FXML
+	private ComboBox<Department> comboBoxDepartment; //atributo para inserir o Combo box
 		
 	@FXML
 	private Label labelErrorName;
@@ -68,12 +81,15 @@ public class SellerFormController implements Initializable {
 	@FXML
 	private Button btCancel;
 	
+	private ObservableList<Department> obsList;
+	
 	public void setSeller(Seller entity) {
 		this.entity = entity;
 	}
 	
-	public void setSellerService(SellerService service) {
+	public void setServices(SellerService service, DepartmentService departmentService) { //método foi alterado para injetar duas dependências de uma vez
 		this.service = service;
+		this.departmentService = departmentService;
 	}
 	
 	public void subscribeDataChangeListener (DataChangeListener listener) {
@@ -146,6 +162,8 @@ public class SellerFormController implements Initializable {
 		Constraints.setTextFieldDouble(txtBaseSalary);
 		Constraints.setTextFieldMaxLength(txtEmail, 60);
 		Utils.formatDatePicker(dpBirthDate, "dd/MM/yyyy");
+		
+		initializeComboBoxDepartment();
 	}
 	
 	public void updateFormData() {
@@ -157,10 +175,27 @@ public class SellerFormController implements Initializable {
 		txtEmail.setText(entity.getEmail());
 		Locale.setDefault(Locale.US);
 		txtBaseSalary.setText(String.format("%.2f", entity.getBaseSalary()));
-		if (entity.getBirthDate() != null) { //antes, é necessário criar um if para proteger porque só vai converter a data para localdate se a data não for nula, sem este if, o programa vai dar erro
-			dpBirthDate.setValue(LocalDate.ofInstant(entity.getBirthDate().toInstant(), ZoneId.systemDefault())); //linha para pegar o fuso horário de acordo com o computador do usuário, para isso convertendo o date para instant, para isso, foi preciso fazer o instant convertido para LocalDate, ou seja, a data local do usuário			
+		if (entity.getBirthDate() != null) { 
+			dpBirthDate.setValue(LocalDate.ofInstant(entity.getBirthDate().toInstant(), ZoneId.systemDefault())); 
+		}
+		if (entity.getDepartment() == null) {//teste para ver se o departamento do vendedor é nulo, ou seja, um vendedor novo que está cadastrando, sem departamento ainda
+			comboBoxDepartment.getSelectionModel().selectFirst();//neste caso, vai ser definindo que o combobox esteja selecionado no primeiro elemento do combobox
+		}
+		else {//esta chamada vai cair somente se já tem um departamento associado ao vendedor
+			comboBoxDepartment.setValue(entity.getDepartment());//somente vai cadastrar quando o departamento não for nulo			
 		}
 
+
+	}
+	
+	public void loadAssociatedObjects() {//método criado para carergar os objetos associados, pois ele vai ser chamado na hora de criar o formulário
+		if (departmentService == null) {
+			throw new IllegalStateException("Department was null!");
+		}
+		List<Department> list = departmentService.findAll();
+		obsList = FXCollections.observableArrayList(list);
+		comboBoxDepartment.setItems(obsList);
+		
 	}
 	
 	private void setErrorMessages(Map<String, String> errors) {
@@ -170,5 +205,18 @@ public class SellerFormController implements Initializable {
 			labelErrorName.setText(errors.get("name"));
 		}
 	}
+	
+	private void initializeComboBoxDepartment() {
+		Callback<ListView<Department>, ListCell<Department>> factory = lv -> new ListCell<Department>() {
+			@Override
+			protected void updateItem(Department item, boolean empty) {
+				super.updateItem(item, empty);
+				setText(empty ? "" : item.getName());
+			}
+		};
+		comboBoxDepartment.setCellFactory(factory);
+		comboBoxDepartment.setButtonCell(factory.call(null));
+	}
+
 
 }
