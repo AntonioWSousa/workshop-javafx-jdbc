@@ -1,9 +1,11 @@
 package gui;
 
 import java.net.URL;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -133,9 +135,28 @@ public class SellerFormController implements Initializable {
 		obj.setId(Utils.tryParseToInt(txtId.getText()));
 		
 		if (txtName.getText() == null || txtName.getText().trim().equals("")) {
-			exception.addError("name", "Fields can't be empty! Enter a department name.");
+			exception.addError("name", "Fields can't be empty!");
 		}
 		obj.setName(txtName.getText());
+		
+		if (txtEmail.getText() == null || txtEmail.getText().trim().equals("")) {
+			exception.addError("email", "Fields can't be empty!");
+		}
+		obj.setEmail(txtEmail.getText());
+		
+		if (dpBirthDate.getValue() == null) {
+			exception.addError("birthDate", "Fields can't be empty!");
+		}
+		else {
+			Instant instant = Instant.from(dpBirthDate.getValue().atStartOfDay(ZoneId.systemDefault()));//atStartOfDay vai converter a data que foi escolhida no horário do computador do usuário para o instant, que é uma data independentemente de localidade 
+			obj.setBirthDate(Date.from(instant));//o objeto (obj.setBirthDate) espera um dado do tipo Date, então, foi feita a conversão de Instant para Date			
+		}	
+		if (txtBaseSalary.getText() == null || txtBaseSalary.getText().trim().equals("")) {
+			exception.addError("baseSalary", "Fields can't be empty!");
+		}
+		obj.setBaseSalary(Utils.tryParseToDouble(txtBaseSalary.getText())); //como o baseSalary é um double, foi feita a conversão de string para double
+		
+		obj.setDepartment(comboBoxDepartment.getValue());//para associar o departamento, pois sem este comando, vai dar erro no momento de selecionar o departamento
 		
 		if (exception.getErrors().size() > 0) {
 			throw exception;
@@ -178,17 +199,17 @@ public class SellerFormController implements Initializable {
 		if (entity.getBirthDate() != null) { 
 			dpBirthDate.setValue(LocalDate.ofInstant(entity.getBirthDate().toInstant(), ZoneId.systemDefault())); 
 		}
-		if (entity.getDepartment() == null) {//teste para ver se o departamento do vendedor é nulo, ou seja, um vendedor novo que está cadastrando, sem departamento ainda
-			comboBoxDepartment.getSelectionModel().selectFirst();//neste caso, vai ser definindo que o combobox esteja selecionado no primeiro elemento do combobox
+		if (entity.getDepartment() == null) {
+			comboBoxDepartment.getSelectionModel().selectFirst();
 		}
-		else {//esta chamada vai cair somente se já tem um departamento associado ao vendedor
-			comboBoxDepartment.setValue(entity.getDepartment());//somente vai cadastrar quando o departamento não for nulo			
+		else {
+			comboBoxDepartment.setValue(entity.getDepartment());	
 		}
 
 
 	}
 	
-	public void loadAssociatedObjects() {//método criado para carergar os objetos associados, pois ele vai ser chamado na hora de criar o formulário
+	public void loadAssociatedObjects() {
 		if (departmentService == null) {
 			throw new IllegalStateException("Department was null!");
 		}
@@ -200,10 +221,21 @@ public class SellerFormController implements Initializable {
 	
 	private void setErrorMessages(Map<String, String> errors) {
 		Set<String> fields = errors.keySet();
+				
+		//operador condicional ternário, que foi criado para deixar o código mais enxuto e não colocar if-else em todos os campos e não deixar muito carregado
+		//condicional para testar se, ao escrever em um campo e dar save, para apagar as mensagens de erro no(s) campo(s) preenchido após salvar
+		// para isso, ela quer dizer, se a condição(?) for verdadeira, ele retorna (fields.contains("name"); se for falsa (:), ele retorna ""
+		labelErrorName.setText((fields.contains("name") ? errors.get("name") : "")); 
+		labelErrorEmail.setText((fields.contains("email") ? errors.get("email") : "")); 
+		labelErrorBirthDate.setText((fields.contains("birthDate") ? errors.get("birthDate") : "")); 
+		labelErrorBaseSalary.setText((fields.contains("baseSalary") ? errors.get("baseSalary") : "")); 
 		
-		if(fields.contains("name")) {
-			labelErrorName.setText(errors.get("name"));
-		}
+//		if(fields.contains("name")) { //é o mesmo resultado do operador condicional ternário
+//		labelErrorName.setText(errors.get("name"));
+//	}
+//	else {
+//		labelErrorName.setText("");
+//	}
 	}
 	
 	private void initializeComboBoxDepartment() {

@@ -27,7 +27,15 @@ public class Utils {
 		catch (NumberFormatException nfe) {
 			return null;
 		}
-
+	}
+	
+	public static Double tryParseToDouble(String str) {
+		try { 
+			return Double.parseDouble(str);
+		}
+		catch (NumberFormatException nfe) {
+			return null;
+		}
 	}
 	
 	public static <T> void formatTableColumnDate(TableColumn<T, Date> tableColumn, String format) { //formatTableColumnDate = método utilitário para formatar a data
