@@ -143,7 +143,7 @@ public class SellerDaoJDBC implements SellerDao {
 		obj.setName(rs.getString("Name"));
 		obj.setEmail(rs.getString("Email"));
 		obj.setBaseSalary(rs.getDouble("BaseSalary"));
-		obj.setBirthDate(rs.getDate("BirthDate"));
+		obj.setBirthDate(new java.util.Date(rs.getTimestamp("BirthDate").getTime())); //se instanciasse a data como obj.setBirthDate(rs.getDate("BirthDate")), a data instanciaria como java.sql.date, por isso, foi necessário corrigir a data para java.util.date
 		obj.setDepartment(dep);
 		return obj;
 	}
